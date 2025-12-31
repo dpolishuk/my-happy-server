@@ -1,9 +1,10 @@
 services:
     app:
-        image: docker.korshakov.com/handy-server:latest
+        build: .
+        image: happy-server:local
         ports:
             - "3005:3005"
-            - "9090:9090"
+            - "9091:9090"
         environment:
             - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/handy
             - REDIS_URL=redis://redis:6379
