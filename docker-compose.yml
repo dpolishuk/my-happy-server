@@ -24,8 +24,8 @@ services:
         volumes:
             - ./logs:/app/.logs
         depends_on:
-            postgres:
-                condition: service_healthy
+            postgres-init:
+                condition: service_completed_successfully
             redis:
                 condition: service_healthy
             minio-init:
@@ -40,7 +40,6 @@ services:
             - POSTGRES_DB=handy
         volumes:
             - postgres_data:/var/lib/postgresql/data
-            - ./docker/init-postgres.sh:/docker-entrypoint-initdb.d/init-postgres.sh:ro
         ports:
             - "5432:5432"
         healthcheck:
@@ -49,6 +48,19 @@ services:
             timeout: 5s
             retries: 5
         restart: unless-stopped
+
+    postgres-init:
+        image: postgres:16-alpine
+        depends_on:
+            postgres:
+                condition: service_healthy
+        environment:
+            - PGPASSWORD=postgres
+        entrypoint: >
+            /bin/sh -c "
+            psql -h postgres -U postgres -c \"ALTER USER postgres WITH PASSWORD 'postgres';\" || true;
+            echo 'PostgreSQL password configured';
+            "
 
     redis:
         image: redis:7-alpine
