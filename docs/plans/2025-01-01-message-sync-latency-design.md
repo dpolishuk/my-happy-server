@@ -143,9 +143,11 @@ private fetchMessages = async (sessionId: string) => {
     // Only decrypt NEW/UPDATED messages (typically 0-5)
     const decrypted = await encryption.decryptMessages(data.messages);
 
-    // Update last sync time to now
-    this.sessionLastSync.set(sessionId, Date.now());
-    this.persistLastSyncTimes();
+    // Update last sync time using SERVER timestamp (avoids clock skew issues)
+    if (data.newestTimestamp) {
+        this.sessionLastSync.set(sessionId, data.newestTimestamp);
+        this.persistLastSyncTimes();
+    }
 
     this.applyMessages(sessionId, decrypted);
 };
@@ -223,6 +225,19 @@ private prefetchActiveSessionMessages = async () => {
 - 3s for sessions list to load
 - 5s for all message prefetches combined
 - If timeout, prefetches continue in background (don't cancel)
+
+---
+
+## Known Limitations
+
+### Deleted Messages
+This design does not handle message deletions. If a message is deleted after sync, the client won't know to remove it. Options for future:
+- Soft-delete flag with `deletedAt` timestamp
+- Periodic full refresh (e.g., every 24h)
+- Separate tombstone endpoint
+
+### Clock Skew Protection
+Using server's `newestTimestamp` (not client's `Date.now()`) mitigates most clock skew issues. For additional protection, could subtract a small buffer (5-10s) from `updatedAfter`, but this may cause minor duplicate fetches.
 
 ---
 
