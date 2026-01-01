@@ -20,6 +20,9 @@ services:
             - S3_SECRET_KEY=minioadmin
             - S3_BUCKET=happy
             - S3_PUBLIC_URL=http://localhost:9000/happy
+            - DANGEROUSLY_LOG_TO_SERVER_FOR_AI_AUTO_DEBUGGING=true
+        volumes:
+            - ./logs:/app/.logs
         depends_on:
             postgres:
                 condition: service_healthy
@@ -37,6 +40,7 @@ services:
             - POSTGRES_DB=handy
         volumes:
             - postgres_data:/var/lib/postgresql/data
+            - ./docker/init-postgres.sh:/docker-entrypoint-initdb.d/init-postgres.sh:ro
         ports:
             - "5432:5432"
         healthcheck:
